@@ -75,9 +75,11 @@ for aS = 1:2
         case 1
             alignName = 'Cue';
             trialStarts =  trigTimes(trigs>=1 & trigs<28);
+            nTrials = sum(trigs>=1 & trigs<28);
         case 2
             alignName = 'Response';
-            trialStarts =  trigTimes(trigs>100 & trigs<104);
+            trialStarts =  trigTimes(trigs>=100 & trigs<=105);
+            nTrials = 300;
     end
     
     
@@ -116,7 +118,7 @@ trialType = zeros(1,nTrials);
 condition = trigs(trigs>=1 & trigs<=27);
 
 
-%% setting up codes for PSTHs over conflict types. 
+%% setting up codes for PSTHs over conflict types.
 % These are the correct codes. Double Checked on 20160216
 trialType(condition>=1 & condition<=3) = 1;    % Type 0 (Cond # 1-3)
 trialType(condition>=4 & condition<=15) = 4;   % Type 2 (Cond # 4-15)
@@ -124,28 +126,31 @@ trialType(condition>=16 & condition<=21) = 2;  % Type 1a Spatial interference (C
 trialType(condition>=22 & condition<=27) = 3;  % Type 1b Distractor interference (Cond # 21-27)
 
 
-%% setting up codes for button selectivity. 
+%% setting up codes for button selectivity.
 
 
-%% Rasters and PSTHs 
-for aSS = 1:length(data)
+%% Rasters and PSTHs
+for aS2 = 1:length(data)
     % which alignment spot
-    switch aSS
+    switch aS2
         case 1
             alignName = 'Cue';
             trialStarts =  trigTimes(trigs>=1 & trigs<28);
+            nTrials = sum(trigs>=1 & trigs<28);
         case 2
             alignName = 'Response';
-            trialStarts =  trigTimes(trigs>100 & trigs<104);
+            trialStarts =  trigTimes(trigs>=100 & trigs<=105);
+            nTrials = 300;
     end
     
-    for ch = 1:size(data(aSS).channel,2)
-        for un = 1:size(data(aSS).channel(ch).unit,2)
+    
+    for ch = 1:size(data(aS2).channel,2)
+        for un = 1:size(data(aS2).channel(ch).unit,2)
             
             display('plotting raster over conflict... grab a cocktail, this may take a while.')
             %% plotting rasters and PSTHs
-            figure(aSS)
-            ah_ras = plotmultipleaxes(1,1,2,0.08,aSS);
+            figure(aS2)
+            ah_ras = plotmultipleaxes(1,1,2,0.08,aS2);
             hold on
             for tt = 1:nTrials
                 % changing raster color based on trial type
@@ -160,18 +165,18 @@ for aSS = 1:length(data)
                 end
                 
                 % plotting rasters for conflict (in the least efficient way possible)
-                for sp = 1:size(data(aSS).channel(ch).unit(un).trial(tt).times,1)
+                for sp = 1:size(data(aS2).channel(ch).unit(un).trial(tt).times,1)
                     try
-                        line([data(aSS).channel(ch).unit(un).trial(tt).times(sp)-pre data(aSS).channel(ch).unit(un).trial(tt).times(sp)-pre], [tt-(9/20) tt+(9/20)],'linewidth',2, 'color', rasCol)
+                        line([data(aS2).channel(ch).unit(un).trial(tt).times(sp)-pre data(aS2).channel(ch).unit(un).trial(tt).times(sp)-pre], [tt-(9/20) tt+(9/20)],'linewidth',2, 'color', rasCol)
                     catch
-                        line([data(aSS).channel(ch).unit(un).trial(tt).times(sp)-pre data(aSS).channel(ch).unit(un).trial(tt).times(sp)-pre], [tt-(9/20) tt+(9/20)],'linewidth',2, 'color', 'k')
+                        line([data(aS2).channel(ch).unit(un).trial(tt).times(sp)-pre data(aS2).channel(ch).unit(un).trial(tt).times(sp)-pre], [tt-(9/20) tt+(9/20)],'linewidth',2, 'color', 'k')
                     end
                 end
                 
                 % stimulus timing lines
                 line([0 0], [0 nTrials],'linestyle', '--', 'color', 'k')
                 % raster plot details
-                xlim([-1 1.5])
+                xlim([-1 2])
                 ylim([0 nTrials])
                 str = sprintf('patient %s, Channel %d, Unit %d; aligned on %s',patientID ,ch ,un ,alignName);
                 title(str,'fontsize',18);
@@ -179,28 +184,28 @@ for aSS = 1:length(data)
                 set(gca, 'linewidth', 2, 'fontsize', 16);
                 
                 
-                %% plotting rasters for button selectivity. 
+                %% plotting rasters for button selectivity.
                 
                 
             end
             hold off
             
             
-            %% PSTH
+            %% PSTH=
             % calculating psths
             kernelWidth = 25  ./1000;
-            [Reasy,t,Eeasy] = psth(data(aSS).channel(ch).unit(un).trial(trialType==1), kernelWidth, 'n', [0 pre+post]);
-            [Rhard,t,Ehard] = psth(data(aSS).channel(ch).unit(un).trial(trialType==4), kernelWidth, 'n', [0 pre+post]);
+            [Reasy,t,Eeasy] = psth(data(aS2).channel(ch).unit(un).trial(trialType(1:nTrials)==1), kernelWidth, 'n', [0 pre+post]);
+            [Rhard,t,Ehard] = psth(data(aS2).channel(ch).unit(un).trial(trialType(1:nTrials)==4), kernelWidth, 'n', [0 pre+post]);
             
             
             try
-                [Rmedi1,t,Emedi1] = psth(data(aSS).channel(ch).unit(un).trial(trialType==2), kernelWidth, 'n', [0 pre+post]);
+                [Rmedi1,t,Emedi1] = psth(data(aS2).channel(ch).unit(un).trial(trialType(1:nTrials)==2), kernelWidth, 'n', [0 pre+post]);
             catch
                 display('no spatial conflict')
             end
             
             try
-                [Rmedi2,t,Emedi2] = psth(data(aSS).channel(ch).unit(un).trial(trialType==3), kernelWidth, 'n', [0 pre+post]);
+                [Rmedi2,t,Emedi2] = psth(data(aS2).channel(ch).unit(un).trial(trialType(1:nTrials)==3), kernelWidth, 'n', [0 pre+post]);
             catch
                 display('no distracter conflict')
             end
@@ -213,25 +218,29 @@ for aSS = 1:length(data)
             %% generate statistics for each Neuron
             [pEasy,Heasy] = ranksum(Reasy(tsec>=-1 & tsec<=-0.5),Reasy(tsec>=0 & tsec<=1));
             [pHard,Hhard] = ranksum(Rhard(tsec>=-1 & tsec<=-0.5),Rhard(tsec>=0 & tsec<=1));
-            neuronStats{ch,un} = table(pEasy,pHard,'VariableNames',{'pEasy','pHard'});
+            if isequal(aS,1)
+                neuronStats.Cue{ch,un} = table(pEasy,pHard,'VariableNames',{'pEasy','pHard'});
+            elseif isequal(aS,2)
+                neuronStats.Response{ch,un} = table(pEasy,pHard,'VariableNames',{'pEasy','pHard'});
+            end
             
             
             %% make it pretty
             % colors and colors and colors and colors
-            EcolEasy = rgb('SpringGreen');
-            EcolHard = rgb('LightCoral');
-            EcolMedi1 = rgb('Orange');
-            EcolMedi2 = rgb('Khaki');
+            EcolEasy = rgb('darkgreen');
+            EcolHard = rgb('darkred');
+            EcolMedi1 = rgb('Orangered');
+            EcolMedi2 = rgb('goldenrod');
             
             % PSTH plot
-            ah_psth = plotmultipleaxes(2,1,2,0.08,aSS);
+            ah_psth = plotmultipleaxes(2,1,2,0.08,aS2);
             hold on
             
             
             %% plotting psths
             try
                 % plotting med psth
-                patch([tsec fliplr(tsec)],[Rmedi1+Emedi1 fliplr(Rmedi1-Emedi1)], EcolMedi1,'edgecolor','none')
+                patch([tsec fliplr(tsec)],[Rmedi1+Emedi1 fliplr(Rmedi1-Emedi1)], EcolMedi1,'edgecolor','none','facealpha',0.5)
                 plot(tsec,Rmedi1,'color',rgb('orangered'),'linewidth',2)
             catch
                 display('no spatial conflict')
@@ -239,25 +248,25 @@ for aSS = 1:length(data)
             
             try
                 % plotting med psth
-                patch([tsec fliplr(tsec)],[Rmedi2+Emedi2 fliplr(Rmedi2-Emedi2)], EcolMedi2,'edgecolor','none')
+                patch([tsec fliplr(tsec)],[Rmedi2+Emedi2 fliplr(Rmedi2-Emedi2)], EcolMedi2,'edgecolor','none','facealpha',0.5)
                 plot(tsec,Rmedi2,'color',rgb('goldenrod'),'linewidth',2)
             catch
                 display('no spatial conflict')
             end
             
             % plotting easy psth
-            patch([tsec fliplr(tsec)],[Reasy+Eeasy fliplr(Reasy-Eeasy)], EcolEasy,'edgecolor','none')
+            patch([tsec fliplr(tsec)],[Reasy+Eeasy fliplr(Reasy-Eeasy)], EcolEasy,'edgecolor','none','facealpha',0.5)
             plot(tsec,Reasy,'color',rgb('DarkGreen'),'linewidth',2)
             
             % plotting hard psth
-            patch([tsec fliplr(tsec)],[Rhard+Ehard fliplr(Rhard-Ehard)], EcolHard,'edgecolor','none')
+            patch([tsec fliplr(tsec)],[Rhard+Ehard fliplr(Rhard-Ehard)], EcolHard,'edgecolor','none','facealpha',0.5)
             plot(tsec,Rhard,'color',rgb('darkRed'),'linewidth',2)
             
             % stimulus timing lines
             line([0 0], [0 nTrials],'linestyle', '--', 'color', 'k')
             % PSTH plot details
-            xlim([-1 1.5])
-            ylim([0 max(Rhard+Ehard)+10])
+            xlim([-1 2])
+            ylim([0 max(Rhard+Ehard)+3])
             hold off
             xlabel('Time (seconds)', 'fontsize', 16);
             ylabel('Firing Rate (spikes/second)', 'fontsize', 16);
@@ -267,23 +276,49 @@ for aSS = 1:length(data)
             %% saving figures.
             figFlag = 1;
             if figFlag
-                if exist('./Figs','dir')
+                if exist(['./' patientID],'dir')
+                    try
+                        fName = sprintf('./%s/Figs/%s_session_%d_Channel_%d_Unit_%d_Conflict_%saligned',patientID,patientID,sessionNum,inclChans(ch),un,alignName);
+                        saveas(aS2,fName, 'pdf')
+                        close(aS2)
+                    catch
+                        mkdir(sprintf('./%s/Figs/',patientID))
+                        fName = sprintf('./%s/Figs/%s_session_%d_Channel_%d_Unit_%d_Conflict_%saligned',patientID,patientID,sessionNum,inclChans(ch),un,alignName);
+                        saveas(aS2,fName, 'pdf')
+                        close(aS2)
+                    end
+                elseif exist('./Figs','dir')
                     fName = sprintf('./Figs/%s_session_%d_Channel_%d_Unit_%d_Conflict_%saligned',patientID,sessionNum,inclChans(ch),un,alignName);
-                    saveas(aSS,fName, 'pdf')
-                    close(aSS)
+                    saveas(aS2,fName, 'pdf')
+                    close(aS2)
                 else
                     fName = sprintf('%s_session_%d_Channel_%d_Unit_%d_Conflict_%saligned',patientID,sessionNum,inclChans(ch),un,alignName);
-                    saveas(aSS,fName, 'pdf')
-                    close(aSS)
+                    saveas(aS2,fName, 'pdf')
+                    close(aS2)
                 end
             end
             
             
-            %% plotting PSTHs for button selectivity. 
-            
+            %% saving stats.
+            if exist(['./' patientID],'dir')
+                try
+                    fName = sprintf('./%s/Data/%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
+                    save([fName '.mat'],'neuronStats')
+                catch
+                    mkdir(sprintf('./%s/Data/',patientID))
+                    fName = sprintf('./%s/Data/%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
+                    save([fName '.mat'],'neuronStats')
+                end
+            elseif exist('./Data','dir')
+                fName = sprintf('./Data/%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
+                save([fName '.mat'],'neuronStats')
+            else
+                fName = sprintf('%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
+                save([fName '.mat'],'neuronStats')
+            end
             
             
         end % looping over units for each channel and align spot
-    end % looping over channels for each align spot. 
+    end % looping over channels for each align spot.
 end % looping over align spots (Stimulus & response)
 

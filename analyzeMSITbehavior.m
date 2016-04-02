@@ -12,7 +12,7 @@ function [behavioralStats,pFeedback,grattonStats] = analyzeMSITbehavior(patientI
 % deal with this: ~~~~
 saveFlag = 1;
 
-
+ 
 %% loading data from NEV file
 display('loading data...')
 % [pathstr, name, ext] = fileparts(nevFile);
