@@ -56,14 +56,13 @@ else
         % saving statistics.
         saveFlag = 1;
         if saveFlag
-            save([patientID '_statisticsOverSessions.mat'],'conflictStats','FBstats','neuralStats')
+            save(['./Data/' patientID '_statisticsOverSessions.mat'],'conflictStats','FBstats','neuralStats')
         end
         
     end
 end
 
 % create summary report
-
 
 end
 

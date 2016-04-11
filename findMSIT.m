@@ -7,11 +7,12 @@ function [nevList] = findMSIT(patientID,patientDirectory,nsFlag)
 %
 %   This code will also transfer the associated NS3 file for local field
 %   potential analysis if teh nsFlag is set to 1 (default, 0).
+%
+%   works great on saturn if NPMK is in your home directory. 
 
 % versionDate: 20160402
 % author: EHS
 
-cd /mnt/mfs/shethLab/Code/Analysis/
 
 % setting defaults.
 if nargin <3
@@ -23,7 +24,7 @@ logical nsFlag
 dirlist = subdir(fullfile(patientDirectory,'*.nev'));
 
 % 2) open NEV files
-addpath(genpath('./NPMK'))
+addpath(genpath('~/NPMK'))
 
 % initializing session count and list of files
 sessionCount = 0;
@@ -52,7 +53,7 @@ for fl = 1:length(dirlist)
             nsListStr = horzcat(nevListStr,' ',[dirlist(fl).name(1:end-3) '.ns3']);
         end
     elseif isequal(triggers(1),255) && ~isequal(triggers(2),90)
-        display('There is the start of a task in this file, though it isn't MSIT.')
+        display('There is the start of a task in this file, though it isn"t MSIT.')
     else
         display(sprintf('There are triggers in file %s, though they might not be MSIT.',dirlist(fl).name))
     end
