@@ -45,7 +45,6 @@ end
 %     end
 % end
 
-
 %% timing (seconds)
 pre = 2;
 post = 3;
