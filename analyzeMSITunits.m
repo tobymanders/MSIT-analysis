@@ -126,7 +126,8 @@ trialType(condition>=16 & condition<=21) = 2;  % Type 1a Spatial interference (C
 trialType(condition>=22 & condition<=27) = 3;  % Type 1b Distractor interference (Cond # 21-27)
 
 
-%% setting up codes for button selectivity.
+%% organizing error trials. 
+
 
 
 %% Rasters and PSTHs
@@ -143,7 +144,7 @@ for aS2 = 1:length(data)
             nTrials = 300;
     end
     
-    
+    % looping over units
     for ch = 1:size(data(aS2).channel,2)
         for un = 1:size(data(aS2).channel(ch).unit,2)
             
@@ -184,7 +185,8 @@ for aS2 = 1:length(data)
                 set(gca, 'linewidth', 2, 'fontsize', 16);
                 
                 
-                %% plotting rasters for button selectivity.
+                %% plotting rasters for post-error trials.
+                
                 
                 
             end

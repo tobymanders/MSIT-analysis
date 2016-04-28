@@ -1,5 +1,5 @@
 function [sessionInfo] = analyzeMSITsessions(patientID)
-% ANALYZEMSITSESSIONS doesg MSIT analysis over sessions.
+% ANALYZEMSITSESSIONS MSIT analysis over sessions for a single subject.
 %   Finds and enters directory called [PatientID].
 %   Looks for data in subdirectory ./Data and analyzes that data.
 %   MSIT over behavioral sessions.
