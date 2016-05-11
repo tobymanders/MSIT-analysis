@@ -1,30 +1,33 @@
-function [nevList] = findMSIT(patientID,patientDirectory,nsFlag)
-%FINDMSIT finds MSIT data in a patient directory
-%   nevList = findMSIT(patientID,patientDirectory) will search recursively through the directory
-% 	in patientDirectory for MSIT data and will return the names of files that have
+function [nevList] = findMSIT(patientID,nsFlag)
+%FINDMSIT finds MSIT data in a patient's directory on saturn
+%   nevList = findMSIT(patientID) will search recursively through the directory
+% 	in /mnt/mfs/patients/BF/PatientID for MSIT data and will return the names of files that have
 %	the trigger structure output from psychToolbox. These nev files will also be copied to
-% 	a directory in the shethLabBackup Data folder called [patientID]_MSIT.
+% 	a directory in the correct place in the shethLab Data directory.
 %
-%   This code will also transfer the associated NS3 file for local field
-%   potential analysis if teh nsFlag is set to 1 (default, 0).
+%       This code will also transfer the associated NS3 file for local field
+%       potential analysis if the nsFlag is set to 1 (default, 0).
 %
-%   works great on saturn if NPMK is in your home directory. 
+%	This function can be run from the command line using (for example): 
+%
+% 		nohup matlab -nodisplay -nojvm -nosplash -r “patientID='CUBF10';nsFlag=1;”  <findMSIT.m>  nevList.out&
+%
 
-% versionDate: 20160402
+% versionDate: 20160502
 % author: EHS
 
-
 % setting defaults.
-if nargin <3
+if ~exist(nsFlag)
     nsFlag = false;
 end
-logical nsFlag
+
+patientDirectory = sprintf('/mnt/mfs/patients/BF/%s',patientID);
 
 % 1) find .nev files in the directory
-dirlist = subdir(fullfile(patientDirectory,'*.nev'));
+dirlist = subdir(fullfile(patientDirectory,'/*.nev'));
 
 % 2) open NEV files
-addpath(genpath('~/NPMK'))
+addpath(genpath('/mnt/mfs/home/NIMASTER/ehs2149/Code'))
 
 % initializing session count and list of files
 sessionCount = 0;
@@ -36,6 +39,7 @@ if nsFlag
 end
 
 % looping over nev files.
+try
 for fl = 1:length(dirlist)
     NEV = openNEV(dirlist(fl).name,'nomat','nosave');
     triggers = NEV.Data.SerialDigitalIO.UnparsedData;
@@ -58,62 +62,44 @@ for fl = 1:length(dirlist)
         display(sprintf('There are triggers in file %s, though they might not be MSIT.',dirlist(fl).name))
     end
 end
-
-display(sprintf('copying NEV files to ~/Data/%s/',patientID))
-eval(['! mkdir ~/Data/' patientID '/'])
-eval(['! cp -v ' nevListStr '  ~/Data/' patientID '/'])
-
-if nsFlag
-    display(sprintf('copying NS3 files to ~/Data/%s/',patientID))
-    eval(['! mkdir ~/Data/' patientID '/'])
-    eval(['! cp -v ' nsListStr '  ~/Data/' patientID '/'])
+catch
+	display(sprintf('nonsensical triggers in this file...'))
 end
 
-return
+% if nevList is empty
+if isempty(nevListstr)
+	error('there aren't any MSIT sessions for this patient.')
+end
 
+% the data path as determined by MJY's data organizational schema. 
+dataPath = '/mnt/mfs/shethLab/Data/EMU/MSIT/';
 
-function [sub,fls] = subdir(CurrPath)
-%   SUBDIR  lists (recursive) all subfolders and files under given folder
-%
-%   SUBDIR
-%        returns all subfolder under current path.
-%
-%   P = SUBDIR('directory_name')
-%       stores all subfolders under given directory into a variable 'P'
-%
-%   [P F] = SUBDIR('directory_name')
-%       stores all subfolders under given directory into a
-%       variable 'P' and all filenames into a variable 'F'.
-%       use sort([F{:}]) to get sorted list of all filenames.
-%
-%   See also DIR, CD
+display(sprintf('copying NEV files to %s',dataPath))
+[shannonSuccess,message,~] = mkdir(dataPath,[patientID '/raw/'])
 
-%   author:  Elmar Tarajan [Elmar.Tarajan@Mathworks.de]
-%   version: 2.0
-%   date:    07-Dez-2004
-%
-if nargin == 0
-    CurrPath = cd;
-end% if
-
-if nargout == 1
-    sub = subfolder(CurrPath,'');
+if shannonSuccess
+	rawDataPath = [dataPath patientID '/raw/'];
 else
-    [sub fls] = subfolder(CurrPath,'','');
-end% if
+	error('something went wrong while trying to create a raw data directory for this patient.')
+end
 
+% looping over files in the list of NEVs and copying them to the data directory
+for fll = 1:length(nevList)
+	shannonStatus = copyfile(rawDataPath,nevList{fll},'f')
+	if shannonStatus; 
+		display(sprintf('nev %d of %d successfully copied!,fll,length(nevList)));
+	end
 
-function [sub,fls] = subfolder(CurrPath,sub,fls)
-%------------------------------------------------
-tmp = dir(CurrPath);
-tmp = tmp(~ismember({tmp.name},{'.' '..'}));
-for i = {tmp([tmp.isdir]).name}
-    sub{end+1} = [CurrPath '\' i{:}];
-    if nargin==2
-        sub = subfolder(sub{end},sub);
-    else
-        tmp = dir(sub{end});
-        fls{end+1} = {tmp(~[tmp.isdir]).name};
-        [sub fls] = subfolder(sub{end},sub,fls);
-    end% if
-end% if
+	% copying NS files. 
+	if nsFlag
+    		display(sprintf('copying NS3 files to %s',rawDataPath))
+    		
+		shannonStatus = copyfile(rawDataPath,nsList{fll},'f')
+		if shannonStatus; 
+			display(sprintf('ns %d of %d successfully copied!,fll,length(nevList)));
+		end
+	end
+end
+
+% end findMSIT.m
+return

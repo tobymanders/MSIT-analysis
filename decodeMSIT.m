@@ -19,6 +19,7 @@ trigTimes = NEV.Data.SerialDigitalIO.TimeStampSec;
 TimeRes = NEV.MetaTags.TimeRes;
 nTrials = sum(trigs==90);
 
+
 %% look for the start of the task
 if isequal(trigs(1),255)
     display('task started in this recording')
@@ -199,27 +200,46 @@ for aS2 = 1:length(data)
     end
     X = cell2mat(X);
     
-    % dimensionality reduction
-    [coef,~,~] = pca(X');
-    clear X
+    %% dimensionality reduction
+    method = 't-SNE';
+    display(sprintf('first using %s method to reduce the data dimensionality',method))
+    if strcmp(method,'PCA')
+        % using PCA
+        [coef,~,~] = pca(X');
+        clear X
+        numCs = 5;
+    elseif strcmp(method,'t-SNE')
+        no_dims = 2;
+        initial_dims = 300;
+        perplexity = 30;
+        % using t-SNE
+        coef = tsne(X, trialType');
+        numCs = no_dims;
+    else
+        coef = X;
+    end
+    
+    % transposing coef for following code.
+    if size(coef,1)>size(coef,2)
+        coef = coef';
+    end
     
     % scatter plot in PCA space.
     figure(1)
     hold on
     Cmap = distinguishable_colors(4);
     for t4 = 1:nTrials
-        scatter3(coef(t4,1),coef(t4,2),coef(t4,3),10,Cmap(trialType(t4),:),'filled')
+        scatter(coef(1,t4),coef(2,t4),10,Cmap(trialType(t4),:),'filled')
     end
     legend('none','spatial','distractor','both')
     hold off
     
     
     %% Decode using PCs
-    %     decodeData = X; 
-    numCs = 5;
-    trainData = coef(1:100,1:numCs);
-    decodeData = coef(101:200,1:numCs);
-    xvalData = coef(201:300,1:numCs);
+    %     decodeData = X;
+    trainData = coef(1:numCs,1:100)';
+    decodeData = coef(1:numCs,101:200)';
+    xvalData = coef(1:numCs,201:300)';
     
     
     %% LDA decode for all classes.
@@ -252,12 +272,11 @@ for aS2 = 1:length(data)
         % calculating decode performance.
         svmDecodePerf(pms) = sum(strcmpi(svmDecodeLabel,svmDecodeClasses(decodeIdx)))./length(svmDecodeLabel);
         svmXvalPerf(pms) = sum(strcmpi(svmXvalLabel,svmXvalClasses(xvalIdx)))./length(svmXvalLabel);
-        
     end
     
     
     %% plotting decode performance.
-    figure(2)
+    figure(aS2)
     bar([[decodePerf; xvalPerf].*100 [svmDecodePerf; svmXvalPerf].*100]')
     line([0.5 1.5],[25 25],'color','k','linestyle','--','linewidth',2)
     line([1.5 7.5],[50 50],'color','k','linestyle','--','linewidth',2)
@@ -266,49 +285,51 @@ for aS2 = 1:length(data)
     set(gca,'xticklabel',{'all4','1v2','1v3','1v4','2v3','2v4','3v4'})
     
     
-    %     %% saving figures.
-    %     figFlag = 1;
-    %     if figFlag
-    %         if exist(['./' patientID],'dir')
-    %             try
-    %                 fName = sprintf('./%s/Figs/%s_session_%d_Channel_%d_Unit_%d_Conflict_%saligned',patientID,patientID,sessionNum,inclChans(ch),un,alignName);
-    %                 saveas(aS2,fName, 'pdf')
-    %                 close(aS2)
-    %             catch
-    %                 mkdir(sprintf('./%s/Figs/',patientID))
-    %                 fName = sprintf('./%s/Figs/%s_session_%d_Channel_%d_Unit_%d_Conflict_%saligned',patientID,patientID,sessionNum,inclChans(ch),un,alignName);
-    %                 saveas(aS2,fName, 'pdf')
-    %                 close(aS2)
-    %             end
-    %         elseif exist('./Figs','dir')
-    %             fName = sprintf('./Figs/%s_session_%d_Channel_%d_Unit_%d_Conflict_%saligned',patientID,sessionNum,inclChans(ch),un,alignName);
-    %             saveas(aS2,fName, 'pdf')
-    %             close(aS2)
-    %         else
-    %             fName = sprintf('%s_session_%d_Channel_%d_Unit_%d_Conflict_%saligned',patientID,sessionNum,inclChans(ch),un,alignName);
-    %             saveas(aS2,fName, 'pdf')
-    %             close(aS2)
-    %         end
-    %     end
-    %
-    %
-    %     %% saving stats.
-    %     if exist(['./' patientID],'dir')
-    %         try
-    %             fName = sprintf('./%s/Data/%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
-    %             save([fName '.mat'],'neuronStats')
-    %         catch
-    %             mkdir(sprintf('./%s/Data/',patientID))
-    %             fName = sprintf('./%s/Data/%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
-    %             save([fName '.mat'],'neuronStats')
-    %         end
-    %     elseif exist('./Data','dir')
-    %         fName = sprintf('./Data/%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
-    %         save([fName '.mat'],'neuronStats')
-    %     else
-    %         fName = sprintf('%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
-    %         save([fName '.mat'],'neuronStats')
-    %     end
+    %% saving figures.
+    figFlag = 'local';
+    if strcmp(figFlag,'local')
+        if exist(['../../' patientID],'dir')
+            try
+                fName = sprintf('../../%s/Figs/%s_session_%saligned_decodeResults',patientID,patientID,sessionNum,alignName);
+                saveas(aS2,fName, 'pdf')
+                close(aS2)
+            catch
+                mkdir(sprintf('../../%s/Figs/',patientID))
+                fName = sprintf('../../%s/Figs/%s_session_%saligned_decodeResults',patientID,patientID,sessionNum,alignName);
+                saveas(aS2,fName, 'pdf')
+                close(aS2)
+            end
+        elseif exist('./Figs','dir')
+            fName = sprintf('./Figs/%s_session_%saligned_decodeResults',patientID,sessionNum,alignName);
+            saveas(aS2,fName, 'pdf')
+            close(aS2)
+        else
+            fName = sprintf('%s_session_%saligned_decodeResults',patientID,sessionNum,alignName);
+            saveas(aS2,fName, 'pdf')
+            close(aS2)
+        end
+    elseif strcmp(figFlag,'dropbox')
+        
+    end
+    
+    %% TODO: output results. 
+%     %% saving stats.
+%     if exist(['./' patientID],'dir')
+%         try
+%             fName = sprintf('./%s/Data/%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
+%             save([fName '.mat'],'neuronStats')
+%         catch
+%             mkdir(sprintf('./%s/Data/',patientID))
+%             fName = sprintf('./%s/Data/%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
+%             save([fName '.mat'],'neuronStats')
+%         end
+%     elseif exist('./Data','dir')
+%         fName = sprintf('./Data/%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
+%         save([fName '.mat'],'neuronStats')
+%     else
+%         fName = sprintf('%s_session_%d_ConflictStats_alignedOn_%s',patientID,patientID,sessionNum,alignName);
+%         save([fName '.mat'],'neuronStats')
+%     end
     
 end % looping over align spots (Stimulus & response)
 
