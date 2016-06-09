@@ -53,8 +53,29 @@ trialType(condition>=22 & condition<=27) = 3;  % Type 1b Distractor interference
 cueTimes = trigTimes(trigs>=1 & trigs<=27);
 respTimes = trigTimes(trigs>=100 & trigs<=103);
 
+if (length(cueTimes) > length(respTimes) && length(cueTimes) == length(trialType))
+ cueTimes(end) = [];
+ trialType(end) = [];
+end
+
 RTs = respTimes-cueTimes;
 
+%% Locate easy, intermediate and hard trials %new
+easy = find (trialType == 1);
+cueEasy = cueTimes(easy);
+respEasy = respTimes(easy);
+
+int1 = find (trialType == 2);
+cueInt1 = cueTimes(int1);
+respInt1 = respTimes(int1);
+
+int2 = find (trialType == 3);
+cueInt2 = cueTimes(int2);
+respInt2 = respTimes(int2);
+
+hard = find (trialType == 4);
+cueHard = cueTimes(hard);
+respHard = respTimes(hard);
 
 %% do statistics on RTs over conflict
 [P,~,behavioralStats] = anova1(RTs,trialType,'off');
